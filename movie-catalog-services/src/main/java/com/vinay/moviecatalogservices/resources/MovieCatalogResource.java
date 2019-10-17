@@ -1,5 +1,6 @@
 package com.vinay.moviecatalogservices.resources;
 
+import com.netflix.discovery.DiscoveryClient;
 import com.vinay.moviecatalogservices.models.CatalogItem;
 import com.vinay.moviecatalogservices.models.Movie;
 import com.vinay.moviecatalogservices.models.Rating;
@@ -25,21 +26,23 @@ public class MovieCatalogResource {
     private final RestTemplate restTemplate;
     private final WebClient.Builder webClientBuilder;
 
+    private DiscoveryClient discoveryClient;
 
     @Autowired
-    public MovieCatalogResource(RestTemplate restTemplate, @Qualifier("getWebClientBuilder") WebClient.Builder webClientBuilder) {
+    public MovieCatalogResource(RestTemplate restTemplate, @Qualifier("getWebClientBuilder") WebClient.Builder webClientBuilder, DiscoveryClient discoveryClient) {
         this.restTemplate = restTemplate;
         this.webClientBuilder = webClientBuilder;
+        this.discoveryClient = discoveryClient;
     }
 
     @GetMapping("/{userId}")
     public List<CatalogItem> getCatalog(@PathVariable("userId") String userId){
 
         // Get all rated movies id
-        UserRating userRating = restTemplate.getForObject("http://localhost:8083/ratingsData/users/"+userId, UserRating.class);
+        UserRating userRating = restTemplate.getForObject("http://ratings-data-service/ratingsData/users/"+userId, UserRating.class);
 
        return userRating.getRatings().stream().map(rating -> {
-           Movie movie = restTemplate.getForObject("http://localhost:8082/movies/"+rating.getMovieId(), Movie.class);
+           Movie movie = restTemplate.getForObject("http://movie-info-service/movies/"+rating.getMovieId(), Movie.class);
           /* Movie movie = webClientBuilder.build()
                    .get()
                    .uri("http://localhost:8082/movies/"+rating.getMovieId())
